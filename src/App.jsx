@@ -9,6 +9,7 @@ import Question from "./quizzComponents/Question";
 import NextButton from "./quizzComponents/NextButton";
 import Progress from "./quizzComponents/Progress";
 import FinishedScreen from "./quizzComponents/FinishedScreen";
+import Timer from "./quizzComponents/Timer";
 
 const initialState = {
     questions: [],
@@ -17,7 +18,10 @@ const initialState = {
     answer: null,
     points: 0,
     highscore: 0,
+    timer: 0,
 };
+
+const SECS_PER_QUESTION = 20; // seconds per question
 
 function reducer(state, action) {
     switch (action.type) {
@@ -26,7 +30,11 @@ function reducer(state, action) {
         case "dataFailed":
             return { ...state, status: "error" };
         case "startQuiz":
-            return { ...state, status: "start" };
+            return {
+                ...state,
+                status: "start",
+                timer: state.questions.length * SECS_PER_QUESTION,
+            };
         case "answered":
             const question = state.questions[state.index];
             return {
@@ -59,14 +67,22 @@ function reducer(state, action) {
                 highscore: state.highscore,
                 status: "ready",
             };
+        case "tick":
+            return {
+                ...state,
+                timer: state.timer - 1,
+                status: state.timer <= 1 ? "finished" : state.status,
+            };
         default:
             throw new Error("Unknown action type");
     }
 }
 
 export default function App() {
-    const [{ questions, status, index, answer, points, highscore }, dispatch] =
-        useReducer(reducer, initialState);
+    const [
+        { questions, status, index, answer, points, highscore, timer },
+        dispatch,
+    ] = useReducer(reducer, initialState);
     const numQuestions = questions.length;
     const maxPoints = questions.reduce((sum, q) => sum + q.points, 0);
 
@@ -110,6 +126,7 @@ export default function App() {
                             dispatch={dispatch}
                             answer={answer}
                         />
+                        <Timer dispatch={dispatch} timer={timer} />
                         <NextButton
                             dispatch={dispatch}
                             answer={answer}
